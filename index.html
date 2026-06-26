@@ -151,8 +151,13 @@
             font-weight: 600;
             cursor: pointer;
             font-family: 'Inter', sans-serif;
-            transition: transform 0.25s ease, box-shadow 0.3s ease;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        opacity 0.5s ease,
+                        box-shadow 0.3s ease,
+                        padding 0.4s ease,
+                        font-size 0.4s ease;
             user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .btn-mau {
@@ -170,22 +175,73 @@
             background: rgba(255, 255, 255, 0.1);
             color: rgba(255, 255, 255, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.25);
+            cursor: not-allowed;
         }
 
         .btn-tolak:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.12);
         }
 
         /* Animasi swap */
         .btn.swapping {
-            animation: swapPop 0.35s ease;
+            animation: swapPop 0.4s ease;
         }
 
         @keyframes swapPop {
             0% { transform: scale(1) rotate(0deg); }
-            40% { transform: scale(0.8) rotate(-8deg); }
-            70% { transform: scale(1.1) rotate(4deg); }
+            40% { transform: scale(0.75) rotate(-10deg); }
+            70% { transform: scale(1.1) rotate(5deg); }
             100% { transform: scale(1) rotate(0deg); }
+        }
+
+        /* Tombol Tolak menghilang */
+        .btn-tolak.vanishing {
+            transform: scale(0) rotate(180deg) !important;
+            opacity: 0 !important;
+            padding: 0 !important;
+            font-size: 0 !important;
+            border-width: 0 !important;
+            pointer-events: none !important;
+            margin: 0 !important;
+            width: 0 !important;
+            overflow: hidden;
+        }
+
+        /* Shake animation saat coba klik Tolak */
+        .btn-tolak.shake {
+            animation: shakeNo 0.4s ease;
+        }
+
+        @keyframes shakeNo {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px) rotate(-3deg); }
+            40% { transform: translateX(6px) rotate(3deg); }
+            60% { transform: translateX(-4px) rotate(-2deg); }
+            80% { transform: translateX(4px) rotate(2deg); }
+        }
+
+        /* Tooltip "Gabisa!" */
+        .tooltip {
+            position: fixed;
+            background: rgba(233, 69, 96, 0.95);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            pointer-events: none;
+            z-index: 150;
+            animation: tooltipPop 1s ease forwards;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes tooltipPop {
+            0% { opacity: 0; transform: translateY(0) scale(0.8); }
+            15% { opacity: 1; transform: translateY(-5px) scale(1); }
+            75% { opacity: 1; transform: translateY(-20px) scale(1); }
+            100% { opacity: 0; transform: translateY(-30px) scale(0.9); }
         }
 
         .acceptance-overlay {
@@ -331,14 +387,14 @@
             <button class="btn btn-tolak" id="btnTolak">Tolak</button>
         </div>
 
-        <p class="hint-text" id="hintText">* Coba hover tombol tolak~ 😏</p>
+        <p class="hint-text" id="hintText">* Coba hover tombol tolak~ </p>
     </div>
 
     <div class="acceptance-overlay" id="overlay">
         <div class="acceptance-content">
             <div class="big-emoji">🎉</div>
             <h2>Yeayy! Makasih ya!</h2>
-            <p>Udah ditunggu di Cafe Delapa, Senin 29 Juni 2026! Sampai ketemu~ ✨</p>
+            <p>Udah ditunggu di Cafe Delapa, Senin 29 Juni 2026! Sampai ketemu~ </p>
         </div>
     </div>
 
@@ -358,7 +414,7 @@
         }
 
         /* ============================
-           SWAP LOGIC
+           SWAP + VANISH LOGIC
         ============================ */
         const btnMau = document.getElementById('btnMau');
         const btnTolak = document.getElementById('btnTolak');
@@ -368,27 +424,86 @@
         const MAX_SWAPS = 3;
         let isSwapped = false;
         let isCooldown = false;
+        let isVanished = false;
 
         const hintMessages = [
             '* Coba hover tombol tolak~ 😏',
             '* Kok posisinya ketukar? 🤔',
-            '* Yakin mau klik tolak? 😄',
-            '* Klik Mau aja! 💕'
+            '* Tombol tolak mulai mengecil... 😮',
+            '* Udah ilang! Klik Mau aja '
         ];
 
-        function handleSwap() {
-            // Cooldown: cegah re-trigger terlalu cepat
-            if (isCooldown) return;
+        const tooltipTexts = [
+            'Gabisa! 😜',
+            'Hehe~ 💨',
+            'Mau aja! 💕'
+        ];
 
-            // Kalau udah 3x, munculkan alert
-            if (swapCount >= MAX_SWAPS) {
-                showFinalAlert();
-                return;
+        /* ============================
+           BLOCK ALL CLICK ATTEMPTS
+           Ini yang fix bug "bisa diklik"
+        ============================ */
+        function blockTolakEvent(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+
+            if (isVanished) return;
+
+            // Shake animation
+            btnTolak.classList.remove('shake');
+            void btnTolak.offsetWidth;
+            btnTolak.classList.add('shake');
+
+            // Show tooltip
+            showTooltip(e.clientX || e.touches?.[0]?.clientX, e.clientY || e.touches?.[0]?.clientY);
+
+            return false;
+        }
+
+        // Block SEMUA event yang bisa trigger click
+        btnTolak.addEventListener('click', blockTolakEvent, true);
+        btnTolak.addEventListener('mousedown', blockTolakEvent, true);
+        btnTolak.addEventListener('mouseup', blockTolakEvent, true);
+        btnTolak.addEventListener('touchstart', blockTolakEvent, { passive: false, capture: true });
+        btnTolak.addEventListener('touchend', blockTolakEvent, { passive: false, capture: true });
+
+        // Global capture: kalau ada click di mana aja tapi targetnya btnTolak
+        document.addEventListener('click', (e) => {
+            if (e.target === btnTolak || btnTolak.contains(e.target)) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
             }
+        }, true);
+
+        /* ============================
+           TOOLTIP
+        ============================ */
+        function showTooltip(x, y) {
+            // Hapus tooltip lama
+            document.querySelectorAll('.tooltip').forEach(t => t.remove());
+
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            tooltip.textContent = tooltipTexts[Math.min(swapCount, tooltipTexts.length - 1)];
+            tooltip.style.left = (x || window.innerWidth / 2) + 'px';
+            tooltip.style.top = ((y || window.innerHeight / 2) - 40) + 'px';
+            tooltip.style.transform = 'translateX(-50%)';
+            document.body.appendChild(tooltip);
+
+            setTimeout(() => tooltip.remove(), 1000);
+        }
+
+        /* ============================
+           SWAP HANDLER
+        ============================ */
+        function handleSwap() {
+            if (isCooldown || isVanished) return;
 
             isCooldown = true;
 
-            // Swap posisi pakai flexbox order
+            // Swap posisi
             isSwapped = !isSwapped;
             btnMau.style.order = isSwapped ? '2' : '1';
             btnTolak.style.order = isSwapped ? '1' : '2';
@@ -396,104 +511,62 @@
             // Animasi pop
             btnMau.classList.remove('swapping');
             btnTolak.classList.remove('swapping');
-            void btnMau.offsetWidth; // force reflow
+            void btnMau.offsetWidth;
             btnMau.classList.add('swapping');
             btnTolak.classList.add('swapping');
 
             swapCount++;
 
-            // Update hint text
+            // Update hint
             hintText.textContent = hintMessages[Math.min(swapCount, hintMessages.length - 1)];
-            if (swapCount >= MAX_SWAPS) {
-                hintText.classList.add('highlight');
+
+            // === EFEK MENGECEL SETIAP SWAP ===
+            if (swapCount === 1) {
+                // Swap 1: tombol Tolak jadi 85%
+                btnTolak.style.transform = 'scale(0.85)';
+                btnTolak.style.padding = '12px 27px';
+                btnTolak.style.fontSize = '14px';
+            } else if (swapCount === 2) {
+                // Swap 2: tombol Tolak jadi 60%
+                btnTolak.style.transform = 'scale(0.6)';
+                btnTolak.style.padding = '9px 20px';
+                btnTolak.style.fontSize = '12px';
+            } else if (swapCount >= MAX_SWAPS) {
+                // Swap 3: HILANGKAN tombol Tolak
+                vanishTolak();
             }
 
-            // Cooldown 600ms
+            // Cooldown
             setTimeout(() => {
                 isCooldown = false;
+            }, 700);
+        }
+
+        /* ============================
+           VANISH TOLAK
+        ============================ */
+        function vanishTolak() {
+            isVanished = true;
+            btnTolak.classList.add('vanishing');
+            hintText.classList.add('highlight');
+
+            // Setelah animasi selesai, hide dari DOM
+            setTimeout(() => {
+                btnTolak.style.display = 'none';
             }, 600);
-
-            // Setelah swap ke-3, munculkan alert
-            if (swapCount >= MAX_SWAPS) {
-                setTimeout(() => {
-                    showFinalAlert();
-                }, 500);
-            }
         }
 
-        function showFinalAlert() {
-            // Custom alert modal (lebih bagus dari alert() browser)
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed;
-                top: 0; left: 0;
-                width: 100%; height: 100%;
-                background: rgba(0, 0, 0, 0.7);
-                backdrop-filter: blur(8px);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 200;
-                animation: fadeIn 0.3s ease;
-            `;
-
-            const content = document.createElement('div');
-            content.style.cssText = `
-                background: linear-gradient(135deg, #1a1a2e, #16213e);
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                border-radius: 20px;
-                padding: 32px 28px;
-                text-align: center;
-                max-width: 320px;
-                width: 90%;
-                animation: scaleIn 0.4s ease;
-                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-            `;
-
-            content.innerHTML = `
-                <div style="font-size: 56px; margin-bottom: 16px; animation: bounce 1s infinite;">😄</div>
-                <h3 style="color: #fff; font-size: 22px; margin-bottom: 12px; font-family: 'Inter', sans-serif;">Klik Mau aja!</h3>
-                <p style="color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 24px; font-family: 'Inter', sans-serif;">Udah 3x ketukar, nyerah aja klik 💖 Mau~</p>
-                <button id="closeAlert" style="
-                    background: linear-gradient(135deg, #e94560, #ff6b6b);
-                    color: white;
-                    border: none;
-                    padding: 12px 32px;
-                    border-radius: 10px;
-                    font-size: 15px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    font-family: 'Inter', sans-serif;
-                    transition: transform 0.2s ease;
-                ">Oke, Mau! 💕</button>
-            `;
-
-            modal.appendChild(content);
-            document.body.appendChild(modal);
-
-            // Close modal
-            document.getElementById('closeAlert').addEventListener('click', () => {
-                modal.style.opacity = '0';
-                modal.style.transition = 'opacity 0.3s ease';
-                setTimeout(() => modal.remove(), 300);
-            });
-
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.style.opacity = '0';
-                    modal.style.transition = 'opacity 0.3s ease';
-                    setTimeout(() => modal.remove(), 300);
-                }
-            });
-        }
-
-        // Event listeners untuk swap
+        // Event listeners untuk swap (mouseenter tetap work karena pointer-events aktif sampai vanish)
         btnTolak.addEventListener('mouseenter', handleSwap);
-        
-        // Support touch device
+
+        // Touch support
         btnTolak.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            handleSwap();
+            // Jangan prevent di sini — biarkan blockTolakEvent yang handle
+            // Tapi kalau belum vanished, trigger swap
+            if (!isVanished && !isCooldown) {
+                e.preventDefault();
+                handleSwap();
+            }
         }, { passive: false });
 
         /* ============================
