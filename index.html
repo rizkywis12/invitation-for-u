@@ -12,6 +12,10 @@
             box-sizing: border-box;
         }
 
+        html {
+            overflow-x: hidden;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
@@ -19,8 +23,10 @@
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 30%, #0f3460 60%, #e94560 100%);
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             position: relative;
+            padding: 20px;
         }
 
         .stars {
@@ -54,27 +60,21 @@
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 24px;
-            padding: 48px 40px;
+            padding: clamp(28px, 5vw, 48px) clamp(20px, 5vw, 40px);
             max-width: 480px;
-            width: 90%;
+            width: 100%;
             text-align: center;
             box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
             animation: fadeInUp 1s ease-out;
         }
 
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .icon {
-            font-size: 64px;
+            font-size: clamp(48px, 10vw, 64px);
             margin-bottom: 16px;
             animation: bounce 2s infinite;
         }
@@ -86,7 +86,7 @@
 
         h1 {
             color: #fff;
-            font-size: 28px;
+            font-size: clamp(22px, 5vw, 28px);
             font-weight: 700;
             margin-bottom: 8px;
             letter-spacing: -0.5px;
@@ -94,15 +94,15 @@
 
         .subtitle {
             color: rgba(255, 255, 255, 0.6);
-            font-size: 14px;
-            margin-bottom: 32px;
+            font-size: clamp(12px, 3vw, 14px);
+            margin-bottom: 28px;
         }
 
         .details {
             background: rgba(255, 255, 255, 0.08);
             border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 32px;
+            padding: clamp(16px, 4vw, 24px);
+            margin-bottom: 28px;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
@@ -110,18 +110,16 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px 0;
+            padding: 10px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             color: rgba(255, 255, 255, 0.9);
-            font-size: 15px;
+            font-size: clamp(13px, 3.5vw, 15px);
         }
 
-        .detail-item:last-child {
-            border-bottom: none;
-        }
+        .detail-item:last-child { border-bottom: none; }
 
         .detail-item .emoji {
-            font-size: 24px;
+            font-size: clamp(20px, 5vw, 24px);
             width: 40px;
             height: 40px;
             display: flex;
@@ -132,42 +130,38 @@
             flex-shrink: 0;
         }
 
-        .detail-item .text {
-            text-align: left;
-        }
+        .detail-item .text { text-align: left; }
 
         .detail-item .label {
-            font-size: 11px;
+            font-size: clamp(9px, 2.5vw, 11px);
             color: rgba(255, 255, 255, 0.4);
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 2px;
         }
 
-        .detail-item .value {
-            font-weight: 600;
-        }
+        .detail-item .value { font-weight: 600; }
 
         .buttons {
             display: flex;
-            gap: 20px;
+            gap: 16px;
             justify-content: center;
             align-items: center;
             flex-wrap: wrap;
             position: relative;
-            min-height: 80px;
-            padding: 10px;
+            min-height: 60px;
+            padding: 10px 0;
         }
 
         .btn {
-            padding: 14px 36px;
+            padding: 14px 32px;
             border: none;
             border-radius: 12px;
-            font-size: 16px;
+            font-size: clamp(14px, 3.5vw, 16px);
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
             font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
         }
 
         .btn-mau {
@@ -187,39 +181,49 @@
             background: rgba(255, 255, 255, 0.1);
             color: rgba(255, 255, 255, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.25);
-            position: relative;
             user-select: none;
             z-index: 5;
-            /* Transition super smooth biar gerakannya enak */
+            transition: transform 0.3s ease,
+                        font-size 0.3s ease,
+                        padding 0.3s ease,
+                        opacity 0.6s ease;
+        }
+
+        /* Saat kabur: fixed position, tidak bisa diklik, animasi posisi */
+        .btn-tolak.running {
+            position: fixed;
+            pointer-events: none;
+            z-index: 50;
             transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
                         top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
                         transform 0.3s ease,
                         font-size 0.3s ease,
-                        padding 0.3s ease;
+                        padding 0.3s ease,
+                        opacity 0.6s ease;
+            will-change: left, top, transform;
         }
 
-        .btn-tolak.running {
-            position: fixed;
-            z-index: 50;
+        .btn-tolak.vanished {
+            opacity: 0 !important;
+            transform: scale(0) rotate(720deg) !important;
+            pointer-events: none !important;
         }
 
         .acceptance-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(10px);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 100;
-            animation: fadeIn 0.5s ease;
         }
 
         .acceptance-overlay.show {
             display: flex;
+            animation: fadeIn 0.5s ease;
         }
 
         @keyframes fadeIn {
@@ -239,21 +243,21 @@
         }
 
         .acceptance-content .big-emoji {
-            font-size: 80px;
+            font-size: clamp(60px, 15vw, 80px);
             margin-bottom: 20px;
             animation: bounce 1s infinite;
         }
 
         .acceptance-content h2 {
             color: #fff;
-            font-size: 32px;
+            font-size: clamp(24px, 6vw, 32px);
             margin-bottom: 12px;
         }
 
         .acceptance-content p {
             color: rgba(255, 255, 255, 0.7);
-            font-size: 16px;
-            max-width: 300px;
+            font-size: clamp(14px, 3.5vw, 16px);
+            max-width: 320px;
         }
 
         .confetti {
@@ -265,14 +269,11 @@
         }
 
         @keyframes fall {
-            to {
-                transform: translateY(110vh) rotate(720deg);
-            }
+            to { transform: translateY(110vh) rotate(720deg); }
         }
 
         .heart {
             position: fixed;
-            font-size: 20px;
             animation: floatUp 3s ease-out forwards;
             pointer-events: none;
             z-index: 99;
@@ -285,9 +286,31 @@
 
         .hint-text {
             color: rgba(255, 255, 255, 0.3);
-            font-size: 12px;
-            margin-top: 20px;
+            font-size: clamp(10px, 2.8vw, 12px);
+            margin-top: 16px;
             font-style: italic;
+            transition: opacity 0.3s ease;
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 380px) {
+            .detail-item .emoji {
+                width: 34px;
+                height: 34px;
+            }
+            .buttons {
+                gap: 12px;
+            }
+            .btn {
+                padding: 12px 24px;
+                width: 100%;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                padding: 48px 44px;
+            }
         }
     </style>
 </head>
@@ -335,7 +358,7 @@
             <button class="btn btn-tolak" id="btnTolak">Tolak</button>
         </div>
 
-        <p class="hint-text">* Tombol tolak agak pemalu 😄</p>
+        <p class="hint-text" id="hintText">* Tombol tolak agak pemalu 😄</p>
     </div>
 
     <div class="acceptance-overlay" id="overlay">
@@ -347,7 +370,9 @@
     </div>
 
     <script>
-        // Create stars
+        /* ============================
+           STARS BACKGROUND
+        ============================ */
         const starsContainer = document.getElementById('stars');
         for (let i = 0; i < 80; i++) {
             const star = document.createElement('div');
@@ -359,133 +384,233 @@
             starsContainer.appendChild(star);
         }
 
-        // Dodge button logic - PROXIMITY BASED
+        /* ============================
+           DODGE BUTTON CONFIG
+        ============================ */
         const btnTolak = document.getElementById('btnTolak');
+        const hintText = document.getElementById('hintText');
+
         let dodgeCount = 0;
         let hasStartedRunning = false;
-        let isDodging = false; // anti-spam flag
+        let hasVanished = false;
         let lastDodgeTime = 0;
 
-        // Radius deteksi — tombol kabur SEBELUM cursor nyentuh
-        const DODGE_RADIUS = 120;
-        const MIN_DODGE_INTERVAL = 250; // ms, biar gak nge-dodge tiap frame
+        const DODGE_RADIUS = 110;         // Jarak deteksi cursor ke tombol
+        const MIN_DODGE_INTERVAL = 500;   // Cooldown antar dodge (ms)
+        const MAX_DODGE_COUNT = 7;        // Hilang setelah 7x dodge
+        const MIN_DIST_FROM_CURSOR = 160; // Posisi baru minimal sejauh ini dari cursor
+        const EDGE_MARGIN = 20;           // Margin dari edge viewport
 
+        const texts = [
+            'Yakin? 🥺',
+            'Jangan dong~',
+            'Kabuuur! 💨',
+            'Ga bisa! 😜',
+            'Nyerah aja~',
+            'Pencet Mau 💕'
+        ];
+
+        /* ============================
+           GET SAFE BOUNDARIES
+        ============================ */
+        function getSafeBounds() {
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const rect = btnTolak.getBoundingClientRect();
+            const w = rect.width || 120;  // fallback
+            const h = rect.height || 48;  // fallback
+
+            return {
+                minX: EDGE_MARGIN,
+                maxX: Math.max(EDGE_MARGIN, vw - w - EDGE_MARGIN),
+                minY: EDGE_MARGIN,
+                maxY: Math.max(EDGE_MARGIN, vh - h - EDGE_MARGIN),
+                w, h
+            };
+        }
+
+        /* ============================
+           DODGE LOGIC
+        ============================ */
         function dodgeButton(cursorX, cursorY) {
-            // Anti-spam: jangan dodge terlalu sering
+            if (hasVanished) return;
+
+            // Anti-spam cooldown
             const now = Date.now();
-            if (isDodging || (now - lastDodgeTime) < MIN_DODGE_INTERVAL) return;
-            isDodging = true;
+            if (now - lastDodgeTime < MIN_DODGE_INTERVAL) return;
             lastDodgeTime = now;
 
             dodgeCount++;
 
-            const btnRect = btnTolak.getBoundingClientRect();
-            const btnWidth = btnRect.width;
-            const btnHeight = btnRect.height;
-            const padding = 20;
-
-            const maxX = window.innerWidth - btnWidth - padding;
-            const maxY = window.innerHeight - btnHeight - padding;
-
-            // Pertama kali: switch ke fixed positioning
-            if (!hasStartedRunning) {
-                hasStartedRunning = true;
-                btnTolak.classList.add('running');
-                btnTolak.style.left = btnRect.left + 'px';
-                btnTolak.style.top = btnRect.top + 'px';
+            // Cek apakah sudah waktunya hilang
+            if (dodgeCount >= MAX_DODGE_COUNT) {
+                vanishButton();
+                return;
             }
 
-            // Hitung posisi baru — JAUH dari cursor
+            // Pertama kali dodge → ubah ke fixed positioning
+            if (!hasStartedRunning) {
+                hasStartedRunning = true;
+                const rect = btnTolak.getBoundingClientRect();
+                btnTolak.classList.add('running');
+                btnTolak.style.left = rect.left + 'px';
+                btnTolak.style.top = rect.top + 'px';
+            }
+
+            const bounds = getSafeBounds();
+
+            // Cari posisi baru yang JAUH dari cursor & DALAM viewport
             let newX, newY;
             let attempts = 0;
-            const minDistance = 180; // jarak minimum dari cursor
 
             do {
-                newX = Math.random() * maxX + padding / 2;
-                newY = Math.random() * maxY + padding / 2;
+                newX = bounds.minX + Math.random() * (bounds.maxX - bounds.minX);
+                newY = bounds.minY + Math.random() * (bounds.maxY - bounds.minY);
                 attempts++;
 
-                // Hitung jarak dari cursor ke posisi baru
-                const distFromCursor = Math.sqrt(
-                    Math.pow(newX + btnWidth / 2 - cursorX, 2) +
-                    Math.pow(newY + btnHeight / 2 - cursorY, 2)
-                );
+                const centerX = newX + bounds.w / 2;
+                const centerY = newY + bounds.h / 2;
+                const dist = Math.hypot(centerX - cursorX, centerY - cursorY);
 
-                // Pastikan posisi baru cukup jauh dari cursor
-                if (distFromCursor > minDistance) break;
-            } while (attempts < 20);
+                if (dist > MIN_DIST_FROM_CURSOR) break;
+            } while (attempts < 30);
+
+            // FINAL CLAMP — tidak mungkin keluar viewport
+            newX = Math.max(bounds.minX, Math.min(newX, bounds.maxX));
+            newY = Math.max(bounds.minY, Math.min(newY, bounds.maxY));
 
             btnTolak.style.left = newX + 'px';
             btnTolak.style.top = newY + 'px';
 
-            // Rotasi random biar lucu
-            const rotation = (Math.random() - 0.5) * 30;
+            // Rotasi sedikit biar playful
+            const rotation = (Math.random() - 0.5) * 25;
             btnTolak.style.transform = `rotate(${rotation}deg)`;
 
-            // Ganti teks sesuai jumlah dodge
-            const texts = [
-                'Tolak',
-                'Yakin? 🥺',
-                'Jangan dong~',
-                'Kabuuur! 💨',
-                'Ga bisa di klik!',
-                'Hehehe~ 😝',
-                'Nyerah aja deh',
-                'Pencet Mau aja 💕',
-                'Masih kabur~',
-                'Capek kan? Mau aja 🥹'
-            ];
-            btnTolak.textContent = texts[Math.min(dodgeCount, texts.length - 1)];
+            // Update teks tombol
+            btnTolak.textContent = texts[Math.min(dodgeCount - 1, texts.length - 1)];
+
+            // Update hint
+            const remaining = MAX_DODGE_COUNT - dodgeCount;
+            if (remaining <= 2) {
+                hintText.textContent = `* Tombol tolak mau hilang... (${remaining}x lagi) 👀`;
+            } else {
+                hintText.textContent = `* Tombol tolak agak pemalu 😄`;
+            }
 
             // Tombol "Mau" makin gede
             const mauBtn = document.querySelector('.btn-mau');
-            const scale = 1 + (dodgeCount * 0.06);
-            mauBtn.style.transform = `scale(${Math.min(scale, 1.6)})`;
+            const mauScale = 1 + dodgeCount * 0.05;
+            mauBtn.style.transform = `scale(${Math.min(mauScale, 1.5)})`;
 
             // Tombol tolak makin kecil
-            const tolakScale = Math.max(1 - (dodgeCount * 0.04), 0.55);
+            const tolakScale = Math.max(1 - dodgeCount * 0.05, 0.6);
             btnTolak.style.fontSize = `${16 * tolakScale}px`;
-            btnTolak.style.padding = `${14 * tolakScale}px ${36 * tolakScale}px`;
+            btnTolak.style.padding = `${14 * tolakScale}px ${32 * tolakScale}px`;
 
-            setTimeout(() => { isDodging = false; }, 100);
+            // Post-move safety: pastikan tetap di viewport setelah style berubah
+            requestAnimationFrame(() => {
+                const rect = btnTolak.getBoundingClientRect();
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                let clamped = false;
+
+                if (rect.right > vw - EDGE_MARGIN) {
+                    btnTolak.style.left = (vw - rect.width - EDGE_MARGIN) + 'px';
+                    clamped = true;
+                }
+                if (rect.bottom > vh - EDGE_MARGIN) {
+                    btnTolak.style.top = (vh - rect.height - EDGE_MARGIN) + 'px';
+                    clamped = true;
+                }
+                if (rect.left < EDGE_MARGIN) {
+                    btnTolak.style.left = EDGE_MARGIN + 'px';
+                    clamped = true;
+                }
+                if (rect.top < EDGE_MARGIN) {
+                    btnTolak.style.top = EDGE_MARGIN + 'px';
+                    clamped = true;
+                }
+            });
         }
 
-        // PROXIMITY DETECTION — tombol kabur sebelum di-sentuh
+        /* ============================
+           VANISH BUTTON
+        ============================ */
+        function vanishButton() {
+            hasVanished = true;
+            btnTolak.classList.add('vanished');
+            hintText.textContent = '* Tombol tolak udah kabur~ Pencet Mau aja 💕';
+
+            setTimeout(() => {
+                btnTolak.style.display = 'none';
+            }, 700);
+        }
+
+        /* ============================
+           PROXIMITY DETECTION (Mouse)
+        ============================ */
         document.addEventListener('mousemove', (e) => {
-            const btnRect = btnTolak.getBoundingClientRect();
-            const btnCenterX = btnRect.left + btnRect.width / 2;
-            const btnCenterY = btnRect.top + btnRect.height / 2;
+            if (hasVanished || !btnTolak.offsetParent && hasStartedRunning) return;
 
-            const distX = e.clientX - btnCenterX;
-            const distY = e.clientY - btnCenterY;
-            const distance = Math.sqrt(distX * distX + distY * distY);
+            const rect = btnTolak.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const distance = Math.hypot(e.clientX - centerX, e.clientY - centerY);
 
-            // Kalau cursor masuk radius DODGE_RADIUS, LANGSUNG kabur
             if (distance < DODGE_RADIUS) {
                 dodgeButton(e.clientX, e.clientY);
             }
         });
 
-        // Fallback untuk touch device (mobile)
-        document.addEventListener('touchmove', (e) => {
+        /* ============================
+           PROXIMITY DETECTION (Touch)
+        ============================ */
+        document.addEventListener('touchstart', (e) => {
+            if (hasVanished) return;
             const touch = e.touches[0];
-            const btnRect = btnTolak.getBoundingClientRect();
-            const btnCenterX = btnRect.left + btnRect.width / 2;
-            const btnCenterY = btnRect.top + btnRect.height / 2;
-
-            const distX = touch.clientX - btnCenterX;
-            const distY = touch.clientY - btnCenterY;
-            const distance = Math.sqrt(distX * distX + distY * distY);
+            const rect = btnTolak.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const distance = Math.hypot(touch.clientX - centerX, touch.clientY - centerY);
 
             if (distance < DODGE_RADIUS) {
                 dodgeButton(touch.clientX, touch.clientY);
             }
         }, { passive: true });
 
-        // Accept action
+        document.addEventListener('touchmove', (e) => {
+            if (hasVanished) return;
+            const touch = e.touches[0];
+            const rect = btnTolak.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const distance = Math.hypot(touch.clientX - centerX, touch.clientY - centerY);
+
+            if (distance < DODGE_RADIUS) {
+                dodgeButton(touch.clientX, touch.clientY);
+            }
+        }, { passive: true });
+
+        /* ============================
+           RESIZE SAFETY
+        ============================ */
+        window.addEventListener('resize', () => {
+            if (!hasStartedRunning || hasVanished) return;
+            const rect = btnTolak.getBoundingClientRect();
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+
+            if (rect.right > vw - EDGE_MARGIN)
+                btnTolak.style.left = Math.max(EDGE_MARGIN, vw - rect.width - EDGE_MARGIN) + 'px';
+            if (rect.bottom > vh - EDGE_MARGIN)
+                btnTolak.style.top = Math.max(EDGE_MARGIN, vh - rect.height - EDGE_MARGIN) + 'px';
+        });
+
+        /* ============================
+           ACCEPT
+        ============================ */
         function accept() {
-            const overlay = document.getElementById('overlay');
-            overlay.classList.add('show');
+            document.getElementById('overlay').classList.add('show');
             createConfetti();
             createHearts();
         }
@@ -494,35 +619,33 @@
             const colors = ['#e94560', '#ff6b6b', '#ffd93d', '#6bcf7f', '#4ecdc4', '#a855f7'];
             for (let i = 0; i < 60; i++) {
                 setTimeout(() => {
-                    const confetti = document.createElement('div');
-                    confetti.className = 'confetti';
-                    confetti.style.left = Math.random() * 100 + 'vw';
-                    confetti.style.width = Math.random() * 10 + 5 + 'px';
-                    confetti.style.height = Math.random() * 10 + 5 + 'px';
-                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-                    confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-                    confetti.style.animationDuration = Math.random() * 2 + 2 + 's';
-                    document.body.appendChild(confetti);
-
-                    setTimeout(() => confetti.remove(), 4000);
+                    const el = document.createElement('div');
+                    el.className = 'confetti';
+                    el.style.left = Math.random() * 100 + 'vw';
+                    el.style.width = (Math.random() * 10 + 5) + 'px';
+                    el.style.height = (Math.random() * 10 + 5) + 'px';
+                    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                    el.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    document.body.appendChild(el);
+                    setTimeout(() => el.remove(), 4500);
                 }, i * 50);
             }
         }
 
         function createHearts() {
-            const hearts = ['💖', '💕', '✨', '🎉', '💗', '🥰'];
+            const emojis = ['💖', '💕', '✨', '🎉', '💗', '🥰'];
             for (let i = 0; i < 20; i++) {
                 setTimeout(() => {
-                    const heart = document.createElement('div');
-                    heart.className = 'heart';
-                    heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
-                    heart.style.left = Math.random() * 100 + 'vw';
-                    heart.style.bottom = '0';
-                    heart.style.fontSize = Math.random() * 20 + 15 + 'px';
-                    heart.style.animationDuration = Math.random() * 2 + 2 + 's';
-                    document.body.appendChild(heart);
-
-                    setTimeout(() => heart.remove(), 4000);
+                    const el = document.createElement('div');
+                    el.className = 'heart';
+                    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    el.style.left = Math.random() * 100 + 'vw';
+                    el.style.bottom = '0';
+                    el.style.fontSize = (Math.random() * 20 + 15) + 'px';
+                    el.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    document.body.appendChild(el);
+                    setTimeout(() => el.remove(), 4500);
                 }, i * 100);
             }
         }
