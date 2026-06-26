@@ -187,9 +187,10 @@
             background: rgba(255, 255, 255, 0.1);
             color: rgba(255, 255, 255, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.25);
-            z-index: 60;
+            position: relative;
             user-select: none;
-            position: fixed;
+            z-index: 5;
+            /* Transition super smooth biar gerakannya enak */
             transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
                         top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
                         transform 0.3s ease,
@@ -197,8 +198,9 @@
                         padding 0.3s ease;
         }
 
-        .btn-tolak:hover {
-            background: rgba(255, 255, 255, 0.15);
+        .btn-tolak.running {
+            position: fixed;
+            z-index: 50;
         }
 
         .acceptance-overlay {
@@ -329,7 +331,7 @@
         </div>
 
         <div class="buttons" id="buttonArea">
-            <button class="btn btn-mau" id="btnMau" onclick="accept()">💖 Mau</button>
+            <button class="btn btn-mau" onclick="accept()">💖 Mau</button>
             <button class="btn btn-tolak" id="btnTolak">Tolak</button>
         </div>
 
@@ -357,83 +359,70 @@
             starsContainer.appendChild(star);
         }
 
-        // Dodge button logic
+        // Dodge button logic - PROXIMITY BASED
         const btnTolak = document.getElementById('btnTolak');
-        const btnMau = document.getElementById('btnMau');
         let dodgeCount = 0;
         let hasStartedRunning = false;
+        let isDodging = false; // anti-spam flag
+        let lastDodgeTime = 0;
 
-        function dodgeButton(event) {
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            
+        // Radius deteksi — tombol kabur SEBELUM cursor nyentuh
+        const DODGE_RADIUS = 120;
+        const MIN_DODGE_INTERVAL = 250; // ms, biar gak nge-dodge tiap frame
+
+        function dodgeButton(cursorX, cursorY) {
+            // Anti-spam: jangan dodge terlalu sering
+            const now = Date.now();
+            if (isDodging || (now - lastDodgeTime) < MIN_DODGE_INTERVAL) return;
+            isDodging = true;
+            lastDodgeTime = now;
+
             dodgeCount++;
 
             const btnRect = btnTolak.getBoundingClientRect();
             const btnWidth = btnRect.width;
             const btnHeight = btnRect.height;
+            const padding = 20;
 
-            // First time: switch to fixed positioning based on current position
+            const maxX = window.innerWidth - btnWidth - padding;
+            const maxY = window.innerHeight - btnHeight - padding;
+
+            // Pertama kali: switch ke fixed positioning
             if (!hasStartedRunning) {
                 hasStartedRunning = true;
+                btnTolak.classList.add('running');
                 btnTolak.style.left = btnRect.left + 'px';
                 btnTolak.style.top = btnRect.top + 'px';
             }
 
-            // Get cursor position
-            let cursorX = 0;
-            let cursorY = 0;
-            
-            if (event && event.clientX !== undefined) {
-                cursorX = event.clientX;
-                cursorY = event.clientY;
-            } else if (event && event.touches && event.touches[0]) {
-                cursorX = event.touches[0].clientX;
-                cursorY = event.touches[0].clientY;
-            }
-
-            // Batasi area pergerakan: hanya di dalam viewport dengan margin aman
-            // Margin besar agar tombol tidak pernah keluar layar
-            const safeMargin = 60;
-            const maxX = window.innerWidth - btnWidth - safeMargin;
-            const maxY = window.innerHeight - btnHeight - safeMargin;
-            const minX = safeMargin;
-            const minY = safeMargin;
-
-            // Calculate new position away from cursor
+            // Hitung posisi baru — JAUH dari cursor
             let newX, newY;
             let attempts = 0;
-            const minDistance = 150;
-            
-            do {
-                newX = Math.random() * (maxX - minX) + minX;
-                newY = Math.random() * (maxY - minY) + minY;
-                attempts++;
-                
-                const distFromCursor = Math.sqrt(
-                    Math.pow(newX + btnWidth/2 - cursorX, 2) + 
-                    Math.pow(newY + btnHeight/2 - cursorY, 2)
-                );
-                
-                if (distFromCursor > minDistance || attempts > 30) {
-                    break;
-                }
-            } while (attempts < 30);
+            const minDistance = 180; // jarak minimum dari cursor
 
-            // Clamp posisi agar 100% dalam viewport (dengan safety margin lebih besar)
-            newX = Math.max(minX, Math.min(newX, maxX));
-            newY = Math.max(minY, Math.min(newY, maxY));
+            do {
+                newX = Math.random() * maxX + padding / 2;
+                newY = Math.random() * maxY + padding / 2;
+                attempts++;
+
+                // Hitung jarak dari cursor ke posisi baru
+                const distFromCursor = Math.sqrt(
+                    Math.pow(newX + btnWidth / 2 - cursorX, 2) +
+                    Math.pow(newY + btnHeight / 2 - cursorY, 2)
+                );
+
+                // Pastikan posisi baru cukup jauh dari cursor
+                if (distFromCursor > minDistance) break;
+            } while (attempts < 20);
 
             btnTolak.style.left = newX + 'px';
             btnTolak.style.top = newY + 'px';
 
-            // Add rotation (kecil saja agar tidak keluar bounds)
-            const rotation = (Math.random() - 0.5) * 15;
+            // Rotasi random biar lucu
+            const rotation = (Math.random() - 0.5) * 30;
             btnTolak.style.transform = `rotate(${rotation}deg)`;
 
-            // Change text
+            // Ganti teks sesuai jumlah dodge
             const texts = [
                 'Tolak',
                 'Yakin? 🥺',
@@ -446,29 +435,23 @@
                 'Masih kabur~',
                 'Capek kan? Mau aja 🥹'
             ];
-
             btnTolak.textContent = texts[Math.min(dodgeCount, texts.length - 1)];
 
-            // Make "Mau" button bigger
+            // Tombol "Mau" makin gede
+            const mauBtn = document.querySelector('.btn-mau');
             const scale = 1 + (dodgeCount * 0.06);
-            btnMau.style.transform = `scale(${Math.min(scale, 1.6)})`;
-            btnMau.style.transition = 'transform 0.3s ease';
+            mauBtn.style.transform = `scale(${Math.min(scale, 1.6)})`;
 
-            // Make tolak button smaller
+            // Tombol tolak makin kecil
             const tolakScale = Math.max(1 - (dodgeCount * 0.04), 0.55);
             btnTolak.style.fontSize = `${16 * tolakScale}px`;
             btnTolak.style.padding = `${14 * tolakScale}px ${36 * tolakScale}px`;
+
+            setTimeout(() => { isDodging = false; }, 100);
         }
 
-        // Add event listeners
-        btnTolak.addEventListener('mouseenter', dodgeButton);
-        btnTolak.addEventListener('touchstart', dodgeButton);
-        btnTolak.addEventListener('click', dodgeButton);
-
-        // Track mouse for proximity dodge
+        // PROXIMITY DETECTION — tombol kabur sebelum di-sentuh
         document.addEventListener('mousemove', (e) => {
-            if (!hasStartedRunning) return;
-            
             const btnRect = btnTolak.getBoundingClientRect();
             const btnCenterX = btnRect.left + btnRect.width / 2;
             const btnCenterY = btnRect.top + btnRect.height / 2;
@@ -477,10 +460,27 @@
             const distY = e.clientY - btnCenterY;
             const distance = Math.sqrt(distX * distX + distY * distY);
 
-            if (distance < 90) {
-                dodgeButton(e);
+            // Kalau cursor masuk radius DODGE_RADIUS, LANGSUNG kabur
+            if (distance < DODGE_RADIUS) {
+                dodgeButton(e.clientX, e.clientY);
             }
         });
+
+        // Fallback untuk touch device (mobile)
+        document.addEventListener('touchmove', (e) => {
+            const touch = e.touches[0];
+            const btnRect = btnTolak.getBoundingClientRect();
+            const btnCenterX = btnRect.left + btnRect.width / 2;
+            const btnCenterY = btnRect.top + btnRect.height / 2;
+
+            const distX = touch.clientX - btnCenterX;
+            const distY = touch.clientY - btnCenterY;
+            const distance = Math.sqrt(distX * distX + distY * distY);
+
+            if (distance < DODGE_RADIUS) {
+                dodgeButton(touch.clientX, touch.clientY);
+            }
+        }, { passive: true });
 
         // Accept action
         function accept() {
@@ -529,4 +529,3 @@
     </script>
 </body>
 </html>
-
