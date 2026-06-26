@@ -151,15 +151,14 @@
             font-weight: 600;
             cursor: pointer;
             font-family: 'Inter', sans-serif;
-            transition: all 0.3s ease;
+            transition: transform 0.25s ease, box-shadow 0.3s ease;
+            user-select: none;
         }
 
         .btn-mau {
             background: linear-gradient(135deg, #e94560, #ff6b6b);
             color: white;
             box-shadow: 0 8px 24px rgba(233, 69, 96, 0.4);
-            z-index: 5;
-            position: relative;
         }
 
         .btn-mau:hover {
@@ -171,27 +170,22 @@
             background: rgba(255, 255, 255, 0.1);
             color: rgba(255, 255, 255, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.25);
-            user-select: none;
-            z-index: 5;
-            transition: transform 0.3s ease,
-                        font-size 0.3s ease,
-                        padding 0.3s ease,
-                        opacity 0.6s ease;
         }
 
-        .btn-tolak.running {
-            position: fixed;
-            pointer-events: none;
-            z-index: 50;
-            will-change: left, top, transform;
-            /* PENTING: max-width 100vw biar gak pernah overflow */
-            max-width: 100vw;
+        .btn-tolak:hover {
+            background: rgba(255, 255, 255, 0.15);
         }
 
-        .btn-tolak.vanished {
-            opacity: 0 !important;
-            transform: scale(0) rotate(720deg) !important;
-            pointer-events: none !important;
+        /* Animasi swap */
+        .btn.swapping {
+            animation: swapPop 0.35s ease;
+        }
+
+        @keyframes swapPop {
+            0% { transform: scale(1) rotate(0deg); }
+            40% { transform: scale(0.8) rotate(-8deg); }
+            70% { transform: scale(1.1) rotate(4deg); }
+            100% { transform: scale(1) rotate(0deg); }
         }
 
         .acceptance-overlay {
@@ -277,6 +271,11 @@
             transition: opacity 0.3s ease;
         }
 
+        .hint-text.highlight {
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+        }
+
         @media (max-width: 380px) {
             .detail-item .emoji { width: 34px; height: 34px; }
             .buttons { gap: 12px; }
@@ -305,7 +304,7 @@
                 </div>
             </div>
             <div class="detail-item">
-                <div class="emoji"></div>
+                <div class="emoji">📍</div>
                 <div class="text">
                     <div class="label">Lokasi</div>
                     <div class="value">Cafe Delapa</div>
@@ -328,11 +327,11 @@
         </div>
 
         <div class="buttons" id="buttonArea">
-            <button class="btn btn-mau" onclick="accept()">💖 Mau</button>
+            <button class="btn btn-mau" id="btnMau" onclick="accept()">💖 Mau</button>
             <button class="btn btn-tolak" id="btnTolak">Tolak</button>
         </div>
 
-        <p class="hint-text" id="hintText">* Tombol tolak agak pemalu 😄</p>
+        <p class="hint-text" id="hintText">* Coba hover tombol tolak~ 😏</p>
     </div>
 
     <div class="acceptance-overlay" id="overlay">
@@ -359,224 +358,143 @@
         }
 
         /* ============================
-           CONFIG
+           SWAP LOGIC
         ============================ */
+        const btnMau = document.getElementById('btnMau');
         const btnTolak = document.getElementById('btnTolak');
         const hintText = document.getElementById('hintText');
 
-        let dodgeCount = 0;
-        let hasStartedRunning = false;
-        let hasVanished = false;
-        let lastDodgeTime = 0;
-        let isAnimating = false;
+        let swapCount = 0;
+        const MAX_SWAPS = 3;
+        let isSwapped = false;
+        let isCooldown = false;
 
-        const DODGE_RADIUS = 110;
-        const MIN_DODGE_INTERVAL = 500;
-        const MAX_DODGE_COUNT = 7;
-        const MIN_DIST_FROM_CURSOR = 160;
-        const EDGE_MARGIN = 24;
-
-        const texts = [
-            'Yakin? 🥺',
-            'Jangan dong~',
-            'Kabuuur! 💨',
-            'Ga bisa! 😜',
-            'Nyerah aja~',
-            'Pencet Mau 💕'
+        const hintMessages = [
+            '* Coba hover tombol tolak~ 😏',
+            '* Kok posisinya ketukar? 🤔',
+            '* Yakin mau klik tolak? 😄',
+            '* Klik Mau aja! 💕'
         ];
 
-        /* ============================
-           HARD CLAMP — pakai vw/vh
-           Batas absolut: 100% viewport
-        ============================ */
-        function hardClamp() {
-            const rect = btnTolak.getBoundingClientRect();
-            const vw = window.innerWidth;
-            const vh = window.innerHeight;
+        function handleSwap() {
+            // Cooldown: cegah re-trigger terlalu cepat
+            if (isCooldown) return;
 
-            let left = parseFloat(btnTolak.style.left) || rect.left;
-            let top = parseFloat(btnTolak.style.top) || rect.top;
-            const w = rect.width;
-            const h = rect.height;
-
-            // Batas kiri: min EDGE_MARGIN, max (100vw - lebar tombol - EDGE_MARGIN)
-            const maxLeft = vw - w - EDGE_MARGIN;
-            const maxTop = vh - h - EDGE_MARGIN;
-
-            left = Math.max(EDGE_MARGIN, Math.min(left, maxLeft));
-            top = Math.max(EDGE_MARGIN, Math.min(top, maxTop));
-
-            // Safety: kalau tombol lebih besar dari viewport
-            if (w > vw - 2 * EDGE_MARGIN) left = EDGE_MARGIN;
-            if (h > vh - 2 * EDGE_MARGIN) top = EDGE_MARGIN;
-
-            btnTolak.style.left = left + 'px';
-            btnTolak.style.top = top + 'px';
-        }
-
-        /* ============================
-           DODGE LOGIC
-        ============================ */
-        function dodgeButton(cursorX, cursorY) {
-            if (hasVanished || isAnimating) return;
-
-            const now = Date.now();
-            if (now - lastDodgeTime < MIN_DODGE_INTERVAL) return;
-            lastDodgeTime = now;
-            isAnimating = true;
-
-            dodgeCount++;
-
-            if (dodgeCount >= MAX_DODGE_COUNT) {
-                vanishButton();
-                isAnimating = false;
+            // Kalau udah 3x, munculkan alert
+            if (swapCount >= MAX_SWAPS) {
+                showFinalAlert();
                 return;
             }
 
-            // === STEP 1: Switch ke fixed positioning ===
-            if (!hasStartedRunning) {
-                hasStartedRunning = true;
-                const rect = btnTolak.getBoundingClientRect();
-                btnTolak.classList.add('running');
-                btnTolak.style.left = rect.left + 'px';
-                btnTolak.style.top = rect.top + 'px';
+            isCooldown = true;
+
+            // Swap posisi pakai flexbox order
+            isSwapped = !isSwapped;
+            btnMau.style.order = isSwapped ? '2' : '1';
+            btnTolak.style.order = isSwapped ? '1' : '2';
+
+            // Animasi pop
+            btnMau.classList.remove('swapping');
+            btnTolak.classList.remove('swapping');
+            void btnMau.offsetWidth; // force reflow
+            btnMau.classList.add('swapping');
+            btnTolak.classList.add('swapping');
+
+            swapCount++;
+
+            // Update hint text
+            hintText.textContent = hintMessages[Math.min(swapCount, hintMessages.length - 1)];
+            if (swapCount >= MAX_SWAPS) {
+                hintText.classList.add('highlight');
             }
 
-            // === STEP 2: Tunggu 1 frame agar layout settle ===
-            requestAnimationFrame(() => {
-                const rect = btnTolak.getBoundingClientRect();
-                const btnW = rect.width;
-                const btnH = rect.height;
-                const vw = window.innerWidth;
-                const vh = window.innerHeight;
+            // Cooldown 600ms
+            setTimeout(() => {
+                isCooldown = false;
+            }, 600);
 
-                // === Batas pakai vw/vh (100% viewport) ===
-                const minX = EDGE_MARGIN;
-                const maxX = vw - btnW - EDGE_MARGIN;  // 100vw - lebar tombol
-                const minY = EDGE_MARGIN;
-                const maxY = vh - btnH - EDGE_MARGIN;  // 100vh - tinggi tombol
+            // Setelah swap ke-3, munculkan alert
+            if (swapCount >= MAX_SWAPS) {
+                setTimeout(() => {
+                    showFinalAlert();
+                }, 500);
+            }
+        }
 
-                // Safety clamp
-                const safeMinX = Math.min(minX, maxX);
-                const safeMaxX = Math.max(minX, maxX);
-                const safeMinY = Math.min(minY, maxY);
-                const safeMaxY = Math.max(minY, maxY);
+        function showFinalAlert() {
+            // Custom alert modal (lebih bagus dari alert() browser)
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0; left: 0;
+                width: 100%; height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                backdrop-filter: blur(8px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 200;
+                animation: fadeIn 0.3s ease;
+            `;
 
-                // === STEP 3: Cari posisi baru ===
-                let newX, newY;
-                let attempts = 0;
+            const content = document.createElement('div');
+            content.style.cssText = `
+                background: linear-gradient(135deg, #1a1a2e, #16213e);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 20px;
+                padding: 32px 28px;
+                text-align: center;
+                max-width: 320px;
+                width: 90%;
+                animation: scaleIn 0.4s ease;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            `;
 
-                do {
-                    newX = safeMinX + Math.random() * (safeMaxX - safeMinX);
-                    newY = safeMinY + Math.random() * (safeMaxY - safeMinY);
-                    attempts++;
+            content.innerHTML = `
+                <div style="font-size: 56px; margin-bottom: 16px; animation: bounce 1s infinite;">😄</div>
+                <h3 style="color: #fff; font-size: 22px; margin-bottom: 12px; font-family: 'Inter', sans-serif;">Klik Mau aja!</h3>
+                <p style="color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 24px; font-family: 'Inter', sans-serif;">Udah 3x ketukar, nyerah aja klik 💖 Mau~</p>
+                <button id="closeAlert" style="
+                    background: linear-gradient(135deg, #e94560, #ff6b6b);
+                    color: white;
+                    border: none;
+                    padding: 12px 32px;
+                    border-radius: 10px;
+                    font-size: 15px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    font-family: 'Inter', sans-serif;
+                    transition: transform 0.2s ease;
+                ">Oke, Mau! 💕</button>
+            `;
 
-                    const centerX = newX + btnW / 2;
-                    const centerY = newY + btnH / 2;
-                    const dist = Math.hypot(centerX - cursorX, centerY - cursorY);
+            modal.appendChild(content);
+            document.body.appendChild(modal);
 
-                    if (dist > MIN_DIST_FROM_CURSOR) break;
-                } while (attempts < 30);
+            // Close modal
+            document.getElementById('closeAlert').addEventListener('click', () => {
+                modal.style.opacity = '0';
+                modal.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => modal.remove(), 300);
+            });
 
-                // === STEP 4: CLAMP KETAT ke 100% viewport ===
-                newX = Math.max(safeMinX, Math.min(newX, safeMaxX));
-                newY = Math.max(safeMinY, Math.min(newY, safeMaxY));
-
-                // === STEP 5: Set posisi + style ===
-                btnTolak.style.left = newX + 'px';
-                btnTolak.style.top = newY + 'px';
-
-                const rotation = (Math.random() - 0.5) * 25;
-                btnTolak.style.transform = `rotate(${rotation}deg)`;
-
-                btnTolak.textContent = texts[Math.min(dodgeCount - 1, texts.length - 1)];
-
-                const remaining = MAX_DODGE_COUNT - dodgeCount;
-                if (remaining <= 2) {
-                    hintText.textContent = `* Tombol tolak mau hilang... (${remaining}x lagi) `;
-                } else {
-                    hintText.textContent = `* Tombol tolak agak pemalu 😄`;
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.style.opacity = '0';
+                    modal.style.transition = 'opacity 0.3s ease';
+                    setTimeout(() => modal.remove(), 300);
                 }
-
-                // Tombol Mau makin gede
-                const mauBtn = document.querySelector('.btn-mau');
-                mauBtn.style.transform = `scale(${Math.min(1 + dodgeCount * 0.05, 1.5)})`;
-
-                // Tombol Tolak makin kecil
-                const tolakScale = Math.max(1 - dodgeCount * 0.05, 0.6);
-                btnTolak.style.fontSize = `${16 * tolakScale}px`;
-                btnTolak.style.padding = `${14 * tolakScale}px ${32 * tolakScale}px`;
-
-                // === STEP 6: Hard clamp setelah style apply ===
-                requestAnimationFrame(() => {
-                    hardClamp();
-                    isAnimating = false;
-                });
             });
         }
 
-        /* ============================
-           VANISH
-        ============================ */
-        function vanishButton() {
-            hasVanished = true;
-            btnTolak.classList.add('vanished');
-            hintText.textContent = '* Tombol tolak udah kabur~ Pencet Mau aja 💕';
-
-            setTimeout(() => {
-                btnTolak.style.display = 'none';
-            }, 700);
-        }
-
-        /* ============================
-           PROXIMITY DETECTION
-        ============================ */
-        document.addEventListener('mousemove', (e) => {
-            if (hasVanished) return;
-
-            const rect = btnTolak.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            const distance = Math.hypot(e.clientX - centerX, e.clientY - centerY);
-
-            if (distance < DODGE_RADIUS) {
-                dodgeButton(e.clientX, e.clientY);
-            }
-        });
-
-        document.addEventListener('touchstart', (e) => {
-            if (hasVanished) return;
-            const touch = e.touches[0];
-            const rect = btnTolak.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            const distance = Math.hypot(touch.clientX - centerX, touch.clientY - centerY);
-
-            if (distance < DODGE_RADIUS) {
-                dodgeButton(touch.clientX, touch.clientY);
-            }
-        }, { passive: true });
-
-        document.addEventListener('touchmove', (e) => {
-            if (hasVanished) return;
-            const touch = e.touches[0];
-            const rect = btnTolak.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            const distance = Math.hypot(touch.clientX - centerX, touch.clientY - centerY);
-
-            if (distance < DODGE_RADIUS) {
-                dodgeButton(touch.clientX, touch.clientY);
-            }
-        }, { passive: true });
-
-        /* ============================
-           RESIZE SAFETY
-        ============================ */
-        window.addEventListener('resize', () => {
-            if (!hasStartedRunning || hasVanished) return;
-            hardClamp();
-        });
+        // Event listeners untuk swap
+        btnTolak.addEventListener('mouseenter', handleSwap);
+        
+        // Support touch device
+        btnTolak.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleSwap();
+        }, { passive: false });
 
         /* ============================
            ACCEPT
