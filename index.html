@@ -344,139 +344,189 @@
         </div>
     </div>
 
-<script>
-    // Create stars
-    const starsContainer = document.getElementById('stars');
-    for (let i = 0; i < 80; i++) {
-        const star = document.createElement('div');
-        star.className = 'star';
-        star.style.left = Math.random() * 100 + '%';
-        star.style.top = Math.random() * 100 + '%';
-        star.style.animationDelay = Math.random() * 2 + 's';
-        star.style.animationDuration = (Math.random() * 2 + 1) + 's';
-        starsContainer.appendChild(star);
-    }
-
-    // Dodge button logic
-    const btnTolak = document.getElementById('btnTolak');
-    const btnMau = document.getElementById('btnMau');
-    const buttonArea = document.getElementById('buttonArea');
-    let dodgeCount = 0;
-    let hasStartedRunning = false;
-
-    // Atur CSS awal via JS agar tombol Tolak berada di posisi normal (relatif terhadap buttonArea)
-    btnTolak.style.position = 'absolute';
-    btnTolak.style.transformOrigin = 'center';
-
-    function dodgeButton(event) {
-        if (event) {
-            event.preventDefault();
-            event.stopPropagation();
+    <script>
+        // Create stars
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 80; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 2 + 's';
+            star.style.animationDuration = (Math.random() * 2 + 1) + 's';
+            starsContainer.appendChild(star);
         }
-        
-        dodgeCount++;
-        hasStartedRunning = true;
 
-        // Mendapatkan batas ukuran dari kontainer tombol agar tidak keluar dari kotak
-        const areaRect = buttonArea.getBoundingClientRect();
-        const btnRect = btnTolak.getBoundingClientRect();
-        
-        // Jarak maksimal pergeseran (hanya bergeser sedikit-sedikit antara -40px sampai 40px)
-        const maxShift = 40; 
-        let randomX = (Math.random() - 0.5) * 2 * maxShift;
-        let randomY = (Math.random() - 0.5) * 2 * maxShift;
+        // Dodge button logic
+        const btnTolak = document.getElementById('btnTolak');
+        const btnMau = document.getElementById('btnMau');
+        let dodgeCount = 0;
+        let hasStartedRunning = false;
 
-        // Hitung posisi baru relatif terhadap pusat default kontainer
-        // Properti 'transform' digunakan agar pergeseran terasa halus dan tidak melompat jauh
-        btnTolak.style.transform = `translate(${randomX}px, ${randomY}px)`;
+        function dodgeButton(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            dodgeCount++;
 
-        // Ganti teks tombol secara berkala
-        const texts = [
-            'Tolak',
-            'Yakin? 🥺',
-            'Jangan dong~',
-            'Kabuuur! 💨',
-            'Ga bisa di klik!',
-            'Hehehe~ 😝',
-            'Nyerah aja deh',
-            'Pencet Mau aja 💕',
-            'Masih kabur~',
-            'Capek kan? Mau aja 🥹'
-        ];
-        btnTolak.textContent = texts[Math.min(dodgeCount, texts.length - 1)];
+            const btnRect = btnTolak.getBoundingClientRect();
+            const btnWidth = btnRect.width;
+            const btnHeight = btnRect.height;
 
-        // Membuat tombol "Mau" membesar secara bertahap
-        const scale = 1 + (dodgeCount * 0.05);
-        btnMau.style.transform = `scale(${Math.min(scale, 1.4)})`;
-        btnMau.style.transition = 'transform 0.2s ease';
-    }
+            // First time: switch to fixed positioning based on current position
+            if (!hasStartedRunning) {
+                hasStartedRunning = true;
+                btnTolak.style.left = btnRect.left + 'px';
+                btnTolak.style.top = btnRect.top + 'px';
+            }
 
-    // Event listeners untuk interaksi tombol
-    btnTolak.addEventListener('mouseenter', dodgeButton);
-    btnTolak.addEventListener('touchstart', dodgeButton);
-    btnTolak.addEventListener('click', dodgeButton);
+            // Get cursor position
+            let cursorX = 0;
+            let cursorY = 0;
+            
+            if (event && event.clientX !== undefined) {
+                cursorX = event.clientX;
+                cursorY = event.clientY;
+            } else if (event && event.touches && event.touches[0]) {
+                cursorX = event.touches[0].clientX;
+                cursorY = event.touches[0].clientY;
+            }
 
-    // Deteksi pergerakan kursor mendekati tombol Tolak
-    document.addEventListener('mousemove', (e) => {
-        const btnRect = btnTolak.getBoundingClientRect();
-        const btnCenterX = btnRect.left + btnRect.width / 2;
-        const btnCenterY = btnRect.top + btnRect.height / 2;
+            // Batasi area pergerakan: hanya di dalam viewport dengan margin aman
+            // Margin besar agar tombol tidak pernah keluar layar
+            const safeMargin = 60;
+            const maxX = window.innerWidth - btnWidth - safeMargin;
+            const maxY = window.innerHeight - btnHeight - safeMargin;
+            const minX = safeMargin;
+            const minY = safeMargin;
 
-        const distX = e.clientX - btnCenterX;
-        const distY = e.clientY - btnCenterY;
-        const distance = Math.sqrt(distX * distX + distY * distY);
+            // Calculate new position away from cursor
+            let newX, newY;
+            let attempts = 0;
+            const minDistance = 150;
+            
+            do {
+                newX = Math.random() * (maxX - minX) + minX;
+                newY = Math.random() * (maxY - minY) + minY;
+                attempts++;
+                
+                const distFromCursor = Math.sqrt(
+                    Math.pow(newX + btnWidth/2 - cursorX, 2) + 
+                    Math.pow(newY + btnHeight/2 - cursorY, 2)
+                );
+                
+                if (distFromCursor > minDistance || attempts > 30) {
+                    break;
+                }
+            } while (attempts < 30);
 
-        // Jika kursor mendekat dalam radius 70px, tombol otomatis menghindar sedikit
-        if (distance < 70) {
-            dodgeButton(e);
+            // Clamp posisi agar 100% dalam viewport (dengan safety margin lebih besar)
+            newX = Math.max(minX, Math.min(newX, maxX));
+            newY = Math.max(minY, Math.min(newY, maxY));
+
+            btnTolak.style.left = newX + 'px';
+            btnTolak.style.top = newY + 'px';
+
+            // Add rotation (kecil saja agar tidak keluar bounds)
+            const rotation = (Math.random() - 0.5) * 15;
+            btnTolak.style.transform = `rotate(${rotation}deg)`;
+
+            // Change text
+            const texts = [
+                'Tolak',
+                'Yakin? 🥺',
+                'Jangan dong~',
+                'Kabuuur! 💨',
+                'Ga bisa di klik!',
+                'Hehehe~ 😝',
+                'Nyerah aja deh',
+                'Pencet Mau aja 💕',
+                'Masih kabur~',
+                'Capek kan? Mau aja 🥹'
+            ];
+
+            btnTolak.textContent = texts[Math.min(dodgeCount, texts.length - 1)];
+
+            // Make "Mau" button bigger
+            const scale = 1 + (dodgeCount * 0.06);
+            btnMau.style.transform = `scale(${Math.min(scale, 1.6)})`;
+            btnMau.style.transition = 'transform 0.3s ease';
+
+            // Make tolak button smaller
+            const tolakScale = Math.max(1 - (dodgeCount * 0.04), 0.55);
+            btnTolak.style.fontSize = `${16 * tolakScale}px`;
+            btnTolak.style.padding = `${14 * tolakScale}px ${36 * tolakScale}px`;
         }
-    });
 
-    // Aksi ketika tombol "Mau" ditekan
-    function accept() {
-        const overlay = document.getElementById('overlay');
-        overlay.classList.add('show');
-        createConfetti();
-        createHearts();
-    }
+        // Add event listeners
+        btnTolak.addEventListener('mouseenter', dodgeButton);
+        btnTolak.addEventListener('touchstart', dodgeButton);
+        btnTolak.addEventListener('click', dodgeButton);
 
-    function createConfetti() {
-        const colors = ['#e94560', '#ff6b6b', '#ffd93d', '#6bcf7f', '#4ecdc4', '#a855f7'];
-        for (let i = 0; i < 60; i++) {
-            setTimeout(() => {
-                const confetti = document.createElement('div');
-                confetti.className = 'confetti';
-                confetti.style.left = Math.random() * 100 + 'vw';
-                confetti.style.width = Math.random() * 10 + 5 + 'px';
-                confetti.style.height = Math.random() * 10 + 5 + 'px';
-                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-                confetti.style.animationDuration = Math.random() * 2 + 2 + 's';
-                document.body.appendChild(confetti);
+        // Track mouse for proximity dodge
+        document.addEventListener('mousemove', (e) => {
+            if (!hasStartedRunning) return;
+            
+            const btnRect = btnTolak.getBoundingClientRect();
+            const btnCenterX = btnRect.left + btnRect.width / 2;
+            const btnCenterY = btnRect.top + btnRect.height / 2;
 
-                setTimeout(() => confetti.remove(), 4000);
-            }, i * 50);
+            const distX = e.clientX - btnCenterX;
+            const distY = e.clientY - btnCenterY;
+            const distance = Math.sqrt(distX * distX + distY * distY);
+
+            if (distance < 90) {
+                dodgeButton(e);
+            }
+        });
+
+        // Accept action
+        function accept() {
+            const overlay = document.getElementById('overlay');
+            overlay.classList.add('show');
+            createConfetti();
+            createHearts();
         }
-    }
 
-    function createHearts() {
-        const hearts = ['💖', '💕', '✨', '🎉', '💗', '🥰'];
-        for (let i = 0; i < 20; i++) {
-            setTimeout(() => {
-                const heart = document.createElement('div');
-                heart.className = 'heart';
-                heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
-                heart.style.left = Math.random() * 100 + 'vw';
-                heart.style.bottom = '0';
-                heart.style.fontSize = Math.random() * 20 + 15 + 'px';
-                heart.style.animationDuration = Math.random() * 2 + 2 + 's';
-                document.body.appendChild(heart);
+        function createConfetti() {
+            const colors = ['#e94560', '#ff6b6b', '#ffd93d', '#6bcf7f', '#4ecdc4', '#a855f7'];
+            for (let i = 0; i < 60; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.width = Math.random() * 10 + 5 + 'px';
+                    confetti.style.height = Math.random() * 10 + 5 + 'px';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                    confetti.style.animationDuration = Math.random() * 2 + 2 + 's';
+                    document.body.appendChild(confetti);
 
-                setTimeout(() => heart.remove(), 4000);
-            }, i * 100);
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 50);
+            }
         }
-    }
-</script>
+
+        function createHearts() {
+            const hearts = ['💖', '💕', '✨', '🎉', '💗', '🥰'];
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const heart = document.createElement('div');
+                    heart.className = 'heart';
+                    heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+                    heart.style.left = Math.random() * 100 + 'vw';
+                    heart.style.bottom = '0';
+                    heart.style.fontSize = Math.random() * 20 + 15 + 'px';
+                    heart.style.animationDuration = Math.random() * 2 + 2 + 's';
+                    document.body.appendChild(heart);
+
+                    setTimeout(() => heart.remove(), 4000);
+                }, i * 100);
+            }
+        }
+    </script>
 </body>
 </html>
 
