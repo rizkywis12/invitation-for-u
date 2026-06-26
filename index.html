@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ajakan Makan Sore ☕</title>
+    <title>Undangan Spesial 💌</title>
     <link href="https://cdn.jsdelivr.net/npm/fontsource/inter@4.5.0/index.css" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,14 +13,10 @@
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 30%, #0f3460 60%, #e94560 100%);
             overflow-x: hidden;
             overflow-y: auto;
             position: relative;
-            padding: 20px;
         }
 
         .stars {
@@ -44,9 +40,206 @@
             100% { opacity: 1; transform: scale(1.5); }
         }
 
-        .container {
+        /* ============================
+           INVITATION OVERLAY
+        ============================ */
+        .invitation-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 20px;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .invitation-overlay.hidden {
+            opacity: 0;
+            transform: scale(1.1);
+            pointer-events: none;
+        }
+
+        .invitation-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 28px;
+            padding: clamp(32px, 6vw, 48px) clamp(24px, 5vw, 40px);
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            animation: cardEntrance 0.8s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes cardEntrance {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Decorative glow */
+        .invitation-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(233, 69, 96, 0.1) 0%, transparent 70%);
+            animation: glowRotate 8s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes glowRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .invitation-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .invite-icon {
+            font-size: clamp(56px, 12vw, 72px);
+            margin-bottom: 20px;
+            animation: floatIcon 3s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0) rotate(-5deg); }
+            50% { transform: translateY(-8px) rotate(5deg); }
+        }
+
+        .invite-label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: clamp(11px, 2.8vw, 13px);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .invite-to {
+            color: #fff;
+            font-size: clamp(24px, 6vw, 32px);
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+
+        .invite-to .highlight {
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .invite-subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: clamp(13px, 3.2vw, 15px);
+            margin-bottom: 28px;
+            font-style: italic;
+        }
+
+        .invite-divider {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            margin: 0 auto 24px;
+        }
+
+        .invite-from-label {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: clamp(10px, 2.5vw, 11px);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+
+        .invite-from {
+            color: #fff;
+            font-size: clamp(18px, 4.5vw, 22px);
+            font-weight: 600;
+            margin-bottom: 28px;
+        }
+
+        .invite-from .emoji {
+            font-size: clamp(16px, 4vw, 20px);
+        }
+
+        .btn-open {
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            color: white;
+            border: none;
+            padding: 16px 48px;
+            border-radius: 14px;
+            font-size: clamp(15px, 3.8vw, 17px);
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 8px 24px rgba(233, 69, 96, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-open::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-open:hover::before {
+            left: 100%;
+        }
+
+        .btn-open:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 32px rgba(233, 69, 96, 0.6);
+        }
+
+        .btn-open:active {
+            transform: scale(0.98);
+        }
+
+        /* ============================
+           MAIN CONTENT (hidden initially)
+        ============================ */
+        .main-content {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.6s ease 0.3s, transform 0.6s ease 0.3s;
             position: relative;
             z-index: 10;
+        }
+
+        .main-content.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .container {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -56,12 +249,6 @@
             width: 100%;
             text-align: center;
             box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
-            animation: fadeInUp 1s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(40px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .icon {
@@ -182,7 +369,6 @@
             background: rgba(255, 255, 255, 0.12);
         }
 
-        /* Animasi swap */
         .btn.swapping {
             animation: swapPop 0.4s ease;
         }
@@ -194,7 +380,6 @@
             100% { transform: scale(1) rotate(0deg); }
         }
 
-        /* Tombol Tolak menghilang */
         .btn-tolak.vanishing {
             transform: scale(0) rotate(180deg) !important;
             opacity: 0 !important;
@@ -207,7 +392,6 @@
             overflow: hidden;
         }
 
-        /* Shake animation saat coba klik Tolak */
         .btn-tolak.shake {
             animation: shakeNo 0.4s ease;
         }
@@ -220,7 +404,6 @@
             80% { transform: translateX(4px) rotate(2deg); }
         }
 
-        /* Tooltip "Gabisa!" */
         .tooltip {
             position: fixed;
             background: rgba(233, 69, 96, 0.95);
@@ -346,55 +529,87 @@
 <body>
     <div class="stars" id="stars"></div>
 
-    <div class="container">
-        <div class="icon">🌅</div>
-        <h1>Yuk, Makan Sore!</h1>
-        <p class="subtitle">Ada yang mau ngajak kamu nih~</p>
+    <!-- ============================
+         INVITATION OVERLAY
+    ============================ -->
+    <div class="invitation-overlay" id="invitationOverlay">
+        <div class="invitation-card">
+            <div class="invite-icon"></div>
+            <div class="invite-label">Undangan Spesial</div>
+            <div class="invite-to">
+                Untuk: <span class="highlight">Yuyun MyPrincess</span>
+            </div>
+            <div class="invite-subtitle">~ dari seseorang yang spesial ~</div>
+            
+            <div class="invite-divider"></div>
+            
+            <div class="invite-from-label">Dari</div>
+            <div class="invite-from">
+                <span class="emoji">👑</span> Rizky <span class="emoji">🐒</span>
+                <br>
+                <span style="font-size: clamp(12px, 3vw, 14px); color: rgba(255,255,255,0.5); font-weight: 400;">(Pangeran Beruk)</span>
+            </div>
 
-        <div class="details">
-            <div class="detail-item">
-                <div class="emoji">📅</div>
-                <div class="text">
-                    <div class="label">Tanggal</div>
-                    <div class="value">Senin, 29 Juni 2026</div>
-                </div>
-            </div>
-            <div class="detail-item">
-                <div class="emoji">📍</div>
-                <div class="text">
-                    <div class="label">Lokasi</div>
-                    <div class="value">Cafe Delapa</div>
-                </div>
-            </div>
-            <div class="detail-item">
-                <div class="emoji">🕐</div>
-                <div class="text">
-                    <div class="label">Waktu</div>
-                    <div class="value">Sore - Jam 7 Malam</div>
-                </div>
-            </div>
-            <div class="detail-item">
-                <div class="emoji">🍽️</div>
-                <div class="text">
-                    <div class="label">Aktivitas</div>
-                    <div class="value">Makan & Ngobrol</div>
-                </div>
-            </div>
+            <button class="btn-open" id="btnOpen" onclick="openInvitation()">
+                Open 💝
+            </button>
         </div>
+    </div>
 
-        <div class="buttons" id="buttonArea">
-            <button class="btn btn-mau" id="btnMau" onclick="accept()">💖 Mau</button>
-            <button class="btn btn-tolak" id="btnTolak">Tolak</button>
+    <!-- ============================
+         MAIN CONTENT
+    ============================ -->
+    <div class="main-content" id="mainContent">
+        <div class="container">
+            <div class="icon">🌅</div>
+            <h1>Yuk, Makan Sore!</h1>
+            <p class="subtitle">Ada yang mau ngajak kamu nih~</p>
+
+            <div class="details">
+                <div class="detail-item">
+                    <div class="emoji">📅</div>
+                    <div class="text">
+                        <div class="label">Tanggal</div>
+                        <div class="value">Senin, 29 Juni 2026</div>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="emoji">📍</div>
+                    <div class="text">
+                        <div class="label">Lokasi</div>
+                        <div class="value">Cafe Delapa</div>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="emoji">🕐</div>
+                    <div class="text">
+                        <div class="label">Waktu</div>
+                        <div class="value">Sore - Jam 7 Malam</div>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="emoji">🍽️</div>
+                    <div class="text">
+                        <div class="label">Aktivitas</div>
+                        <div class="value">Makan & Ngobrol</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="buttons" id="buttonArea">
+                <button class="btn btn-mau" id="btnMau" onclick="accept()">💖 Mau</button>
+                <button class="btn btn-tolak" id="btnTolak">Tolak</button>
+            </div>
+
+            <p class="hint-text" id="hintText">* Coba hover tombol tolak~ 😏</p>
         </div>
-
-        <p class="hint-text" id="hintText">* Coba hover tombol tolak~ </p>
     </div>
 
     <div class="acceptance-overlay" id="overlay">
         <div class="acceptance-content">
             <div class="big-emoji">🎉</div>
             <h2>Yeayy! Makasih ya!</h2>
-            <p>Udah ditunggu di Cafe Delapa, Senin 29 Juni 2026! Sampai ketemu~ </p>
+            <p>Udah ditunggu di Cafe Delapa, Senin 29 Juni 2026! Sampai ketemu~ ✨</p>
         </div>
     </div>
 
@@ -414,6 +629,22 @@
         }
 
         /* ============================
+           OPEN INVITATION
+        ============================ */
+        function openInvitation() {
+            const overlay = document.getElementById('invitationOverlay');
+            const main = document.getElementById('mainContent');
+            
+            // Hide invitation
+            overlay.classList.add('hidden');
+            
+            // Show main content
+            setTimeout(() => {
+                main.classList.add('visible');
+            }, 200);
+        }
+
+        /* ============================
            SWAP + VANISH LOGIC
         ============================ */
         const btnMau = document.getElementById('btnMau');
@@ -428,21 +659,17 @@
 
         const hintMessages = [
             '* Coba hover tombol tolak~ 😏',
-            '* Kok posisinya ketukar? 🤔',
+            '* Kok posisinya ketukar? ',
             '* Tombol tolak mulai mengecil... 😮',
-            '* Udah ilang! Klik Mau aja '
+            '* Udah ilang! Klik Mau aja 💕'
         ];
 
         const tooltipTexts = [
-            'Gabisa! 😜',
+            'Gabisa! ',
             'Hehe~ 💨',
             'Mau aja! 💕'
         ];
 
-        /* ============================
-           BLOCK ALL CLICK ATTEMPTS
-           Ini yang fix bug "bisa diklik"
-        ============================ */
         function blockTolakEvent(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -450,25 +677,21 @@
 
             if (isVanished) return;
 
-            // Shake animation
             btnTolak.classList.remove('shake');
             void btnTolak.offsetWidth;
             btnTolak.classList.add('shake');
 
-            // Show tooltip
             showTooltip(e.clientX || e.touches?.[0]?.clientX, e.clientY || e.touches?.[0]?.clientY);
 
             return false;
         }
 
-        // Block SEMUA event yang bisa trigger click
         btnTolak.addEventListener('click', blockTolakEvent, true);
         btnTolak.addEventListener('mousedown', blockTolakEvent, true);
         btnTolak.addEventListener('mouseup', blockTolakEvent, true);
         btnTolak.addEventListener('touchstart', blockTolakEvent, { passive: false, capture: true });
         btnTolak.addEventListener('touchend', blockTolakEvent, { passive: false, capture: true });
 
-        // Global capture: kalau ada click di mana aja tapi targetnya btnTolak
         document.addEventListener('click', (e) => {
             if (e.target === btnTolak || btnTolak.contains(e.target)) {
                 e.preventDefault();
@@ -477,11 +700,7 @@
             }
         }, true);
 
-        /* ============================
-           TOOLTIP
-        ============================ */
         function showTooltip(x, y) {
-            // Hapus tooltip lama
             document.querySelectorAll('.tooltip').forEach(t => t.remove());
 
             const tooltip = document.createElement('div');
@@ -495,20 +714,15 @@
             setTimeout(() => tooltip.remove(), 1000);
         }
 
-        /* ============================
-           SWAP HANDLER
-        ============================ */
         function handleSwap() {
             if (isCooldown || isVanished) return;
 
             isCooldown = true;
 
-            // Swap posisi
             isSwapped = !isSwapped;
             btnMau.style.order = isSwapped ? '2' : '1';
             btnTolak.style.order = isSwapped ? '1' : '2';
 
-            // Animasi pop
             btnMau.classList.remove('swapping');
             btnTolak.classList.remove('swapping');
             void btnMau.offsetWidth;
@@ -517,52 +731,38 @@
 
             swapCount++;
 
-            // Update hint
             hintText.textContent = hintMessages[Math.min(swapCount, hintMessages.length - 1)];
 
-            // === EFEK MENGECEL SETIAP SWAP ===
             if (swapCount === 1) {
-                // Swap 1: tombol Tolak jadi 85%
                 btnTolak.style.transform = 'scale(0.85)';
                 btnTolak.style.padding = '12px 27px';
                 btnTolak.style.fontSize = '14px';
             } else if (swapCount === 2) {
-                // Swap 2: tombol Tolak jadi 60%
                 btnTolak.style.transform = 'scale(0.6)';
                 btnTolak.style.padding = '9px 20px';
                 btnTolak.style.fontSize = '12px';
             } else if (swapCount >= MAX_SWAPS) {
-                // Swap 3: HILANGKAN tombol Tolak
                 vanishTolak();
             }
 
-            // Cooldown
             setTimeout(() => {
                 isCooldown = false;
             }, 700);
         }
 
-        /* ============================
-           VANISH TOLAK
-        ============================ */
         function vanishTolak() {
             isVanished = true;
             btnTolak.classList.add('vanishing');
             hintText.classList.add('highlight');
 
-            // Setelah animasi selesai, hide dari DOM
             setTimeout(() => {
                 btnTolak.style.display = 'none';
             }, 600);
         }
 
-        // Event listeners untuk swap (mouseenter tetap work karena pointer-events aktif sampai vanish)
         btnTolak.addEventListener('mouseenter', handleSwap);
 
-        // Touch support
         btnTolak.addEventListener('touchstart', (e) => {
-            // Jangan prevent di sini — biarkan blockTolakEvent yang handle
-            // Tapi kalau belum vanished, trigger swap
             if (!isVanished && !isCooldown) {
                 e.preventDefault();
                 handleSwap();
@@ -597,7 +797,7 @@
         }
 
         function createHearts() {
-            const emojis = ['💖', '💕', '✨', '🎉', '💗', '🥰'];
+            const emojis = ['', '💕', '✨', '', '💗', '🥰'];
             for (let i = 0; i < 20; i++) {
                 setTimeout(() => {
                     const el = document.createElement('div');
